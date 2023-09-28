@@ -29,6 +29,7 @@ public class PlayerRepositoryDB implements IPlayerRepository {
         properties.put(Environment.PASS, "root");
         properties.put(Environment.HBM2DDL_AUTO, "update");
         properties.put(Environment.SHOW_SQL, "true");
+        properties.put(Environment.FORMAT_SQL, "true");
         properties.put("hibernate.default_schema", "rpg");
 
 
@@ -43,8 +44,11 @@ public class PlayerRepositoryDB implements IPlayerRepository {
     public List<Player> getAll(int pageNumber, int pageSize) {
         try (Session session = sessionFactory.openSession()) {
             NativeQuery<Player> nativeQuery = session.createNativeQuery("SELECT * FROM rpg.player LIMIT :pagesize OFFSET :pagenumber", Player.class);
+            pageNumber = pageNumber + 1;
             nativeQuery.setParameter("pagesize", pageSize);
-            nativeQuery.setParameter("pagenumber", pageNumber);
+            nativeQuery.setParameter("pagenumber", (pageNumber * pageSize) - pageSize);
+            System.out.println(pageSize + "\t" + pageNumber);
+            System.out.println((pageNumber * pageSize) - pageSize);
             return nativeQuery.list();
         }
     }
@@ -55,6 +59,7 @@ public class PlayerRepositoryDB implements IPlayerRepository {
             Query<Long> query = session.createNamedQuery("getAllCount_annotation");
 //            Query<BigInteger> query = session.createNativeQuery("SELECT COUNT(*) FROM rpg.player");
             Long result = query.uniqueResult();
+            System.out.println("All count is: " + result);
             return result.intValue();
         } catch (Exception e) {
             e.printStackTrace();
@@ -67,11 +72,15 @@ public class PlayerRepositoryDB implements IPlayerRepository {
     public Player save(Player player) {
         try (Session session = sessionFactory.openSession()) {
             Transaction transaction = session.beginTransaction();
-            Integer id = (Integer) session.save(player);
+            Long id = (Long) session.save(player); // Use Long for id
             session.flush();
             transaction.commit();
+            System.out.println(session.get(Player.class, id));
             return session.get(Player.class, id);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return null;
     }
 
     @Override
