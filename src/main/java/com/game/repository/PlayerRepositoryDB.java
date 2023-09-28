@@ -11,8 +11,6 @@ import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PreDestroy;
-import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -22,14 +20,16 @@ public class PlayerRepositoryDB implements IPlayerRepository {
     private final SessionFactory sessionFactory;
     public PlayerRepositoryDB() {
         Properties properties = new Properties();
-        properties.put(Environment.DRIVER, "com.mysql.cj.jdbc.Driver");
-        properties.put(Environment.URL, "jdbc:mysql://localhost:3306/rpg");
+//        properties.put(Environment.DRIVER, "com.mysql.cj.jdbc.Driver");
+//        properties.put(Environment.URL, "jdbc:mysql://localhost:3306/rpg");
+        properties.put(Environment.DRIVER, "com.p6spy.engine.spy.P6SpyDriver");
+        properties.put(Environment.URL, "jdbc:p6spy:mysql://localhost:3306/rpg");
         properties.put(Environment.DIALECT, "org.hibernate.dialect.MySQL8Dialect");
         properties.put(Environment.USER, "root");
         properties.put(Environment.PASS, "root");
         properties.put(Environment.HBM2DDL_AUTO, "update");
-        properties.put(Environment.SHOW_SQL, "true");
-        properties.put(Environment.FORMAT_SQL, "true");
+//        properties.put(Environment.SHOW_SQL, "true");
+//        properties.put(Environment.FORMAT_SQL, "true");
         properties.put("hibernate.default_schema", "rpg");
 
 
@@ -47,8 +47,6 @@ public class PlayerRepositoryDB implements IPlayerRepository {
             pageNumber = pageNumber + 1;
             nativeQuery.setParameter("pagesize", pageSize);
             nativeQuery.setParameter("pagenumber", (pageNumber * pageSize) - pageSize);
-            System.out.println(pageSize + "\t" + pageNumber);
-            System.out.println((pageNumber * pageSize) - pageSize);
             return nativeQuery.list();
         }
     }
@@ -57,9 +55,7 @@ public class PlayerRepositoryDB implements IPlayerRepository {
     public int getAllCount() {
         try (Session session = sessionFactory.openSession()) {
             Query<Long> query = session.createNamedQuery("getAllCount_annotation");
-//            Query<BigInteger> query = session.createNativeQuery("SELECT COUNT(*) FROM rpg.player");
             Long result = query.uniqueResult();
-            System.out.println("All count is: " + result);
             return result.intValue();
         } catch (Exception e) {
             e.printStackTrace();
@@ -72,10 +68,9 @@ public class PlayerRepositoryDB implements IPlayerRepository {
     public Player save(Player player) {
         try (Session session = sessionFactory.openSession()) {
             Transaction transaction = session.beginTransaction();
-            Long id = (Long) session.save(player); // Use Long for id
+            Long id = (Long) session.save(player);
             session.flush();
             transaction.commit();
-            System.out.println(session.get(Player.class, id));
             return session.get(Player.class, id);
         } catch (Exception e) {
             e.printStackTrace();
